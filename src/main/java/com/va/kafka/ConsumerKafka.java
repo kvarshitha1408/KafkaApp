@@ -9,7 +9,10 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,7 +36,10 @@ public class ConsumerKafka {
         }
       
         int runDurationSec = Integer.parseInt(props.getProperty("run.duration.seconds", "60"));
-        try(final Consumer<String , String> consumer = new KafkaConsumer<>(props)) {
+        String outputFilePath = props.getProperty("output.file.path", "consumer_output.json");
+
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath, true));
+        		Consumer<String , String> consumer = new KafkaConsumer<>(props)) {
         	consumer.subscribe(Collections.singletonList("testva"));
         	
         	Instant endTime= Instant.now().plusSeconds(runDurationSec);
@@ -45,12 +51,17 @@ public class ConsumerKafka {
             	ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
                 for (ConsumerRecord<String, String> record : records) {
                 	totalmsgs++;
+                	String msg = record.value();
                     LOGGER.info("Received -> " + record.value());
+                    
+                    writer.write(msg);
+                    writer.newLine();
                 }
             }
 
             LOGGER.info("\nDuration seconds over. Closing consumer...");
             LOGGER.info("\nTotal messages consumed: " + totalmsgs);
+            LOGGER.info("Consumed and wrote message to :" +outputFilePath);
             LOGGER.info("Consumed json msgs succssfully");
 
         } catch (Exception e) {

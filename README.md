@@ -1,2 +1,2 @@
 # KafkaApp
-Kafka Application
+Kafka sample producer-consumer Application
